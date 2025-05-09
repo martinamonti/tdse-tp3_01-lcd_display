@@ -5,14 +5,7 @@
 
 #include "user_interface.h"
 
-#include "code.h"
-#include "siren.h"
 #include "smart_home_system.h"
-#include "fire_alarm.h"
-#include "date_and_time.h"
-#include "temperature_sensor.h"
-#include "gas_sensor.h"
-#include "matrix_keypad.h"
 #include "display.h"
 
 //=====[Declaration of private defines]========================================
@@ -30,7 +23,6 @@ DigitalOut systemBlockedLed(LED2);
 
 //=====[Declaration and initialization of public global variables]=============
 
-char codeSequenceFromUserInterface[CODE_NUMBER_OF_KEYS];
 
 //=====[Declaration and initialization of private global variables]============
 
@@ -42,7 +34,6 @@ static int numberOfCodeChars = 0;
 
 //=====[Declarations (prototypes) of private functions]========================
 
-static void userInterfaceMatrixKeypadUpdate();
 static void incorrectCodeIndicatorUpdate();
 static void systemBlockedIndicatorUpdate();
 
@@ -55,13 +46,11 @@ void userInterfaceInit()
 {
     incorrectCodeLed = OFF;
     systemBlockedLed = OFF;
-    matrixKeypadInit( SYSTEM_TIME_INCREMENT_MS );
     userInterfaceDisplayInit();
 }
 
 void userInterfaceUpdate()
 {
-    userInterfaceMatrixKeypadUpdate();
     incorrectCodeIndicatorUpdate();
     systemBlockedIndicatorUpdate();
     userInterfaceDisplayUpdate();
@@ -99,35 +88,7 @@ void userInterfaceCodeCompleteWrite( bool state )
 
 //=====[Implementations of private functions]==================================
 
-static void userInterfaceMatrixKeypadUpdate()
-{
-    static int numberOfHashKeyReleased = 0;
-    char keyReleased = matrixKeypadUpdate();
 
-    if( keyReleased != '\0' ) {
-
-        if( sirenStateRead() && !systemBlockedStateRead() ) {
-            if( !incorrectCodeStateRead() ) {
-                codeSequenceFromUserInterface[numberOfCodeChars] = keyReleased;
-                numberOfCodeChars++;
-                if ( numberOfCodeChars >= CODE_NUMBER_OF_KEYS ) {
-                    codeComplete = true;
-                    numberOfCodeChars = 0;
-                }
-            } else {
-                if( keyReleased == '#' ) {
-                    numberOfHashKeyReleased++;
-                    if( numberOfHashKeyReleased >= 2 ) {
-                        numberOfHashKeyReleased = 0;
-                        numberOfCodeChars = 0;
-                        codeComplete = false;
-                        incorrectCodeState = OFF;
-                    }
-                }
-            }
-        }
-    }
-}
 
 static void userInterfaceDisplayInit()
 {
@@ -153,7 +114,6 @@ static void userInterfaceDisplayUpdate()
 
         accumulatedDisplayTime = 0;
 
-        sprintf(temperatureString, "%.0f", temperatureSensorReadCelsius());
         displayCharPositionWrite ( 12,0 );
         displayStringWrite( temperatureString );
         displayCharPositionWrite ( 14,0 );
@@ -161,19 +121,9 @@ static void userInterfaceDisplayUpdate()
 
         displayCharPositionWrite ( 4,1 );
 
-        if ( gasDetectorStateRead() ) {
-            displayStringWrite( "Detected    " );
-        } else {
-            displayStringWrite( "Not Detected" );
-        }
 
         displayCharPositionWrite ( 6,2 );
         
-        if ( sirenStateRead() ) {
-            displayStringWrite( "ON " );
-        } else {
-            displayStringWrite( "OFF" );
-        }
 
     } else {
         accumulatedDisplayTime =
